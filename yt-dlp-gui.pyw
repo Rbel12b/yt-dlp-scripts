@@ -57,7 +57,7 @@ def update_and_restart():
     current_file = os.path.abspath(sys.argv[0])
     new_file = download_new_version(current_file)
 
-    if os.name != "nt":
+    if os.name == "nt":
         # On Windows, spawn a helper .bat file to replace the file after exit
         bat_file = "{CONFIG_DIR}\\update_and_restart.bat".format(CONFIG_DIR=CONFIG_DIR)
         with open(bat_file, "w") as f:
