@@ -46,7 +46,7 @@ os.makedirs(TEMP_AUDIO_DIR, exist_ok=True)
 os.makedirs(VIDEO_OUTDIR, exist_ok=True)
 
 # URL of the latest version of this file on GitHub (raw link!)
-GITHUB_RAW_URL = "https://raw.githubusercontent.com/Rbel12b/yt-dlp-scripts/refs/heads/master/yt-dlp-gui.pyw"
+GITHUB_RAW_URL = "https://raw.githubusercontent.com/Rbel12b/yt-dlp-scripts/master/yt-dlp-gui.pyw"
 
 def download_new_version(target_path):
     tmp_path = target_path + ".new"
