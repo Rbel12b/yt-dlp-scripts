@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2025 Your Name
+# Copyright (c) 2025 Rbel12b
 # Licensed under the MIT License. See LICENSE file in the project root for details.
 
 import os
