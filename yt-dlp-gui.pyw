@@ -6,21 +6,7 @@ import tkinter as tk
 import threading
 from tkinter import messagebox, filedialog
 import webbrowser
-
-def run_command_term(cmd_args, done_callback=None):
-    """Run command with terminal window, even when python is running without one."""
-
-    proc = subprocess.Popen(
-        cmd_args,
-        creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0,
-    )
-
-    def wait_thread():
-        proc.wait()
-        if done_callback:
-            done_callback()
-
-    threading.Thread(target=wait_thread).start()
+import urllib.request
 
 # GUI
 root = tk.Tk()
@@ -59,6 +45,51 @@ LIBRARY_DB = os.path.join(HOME, ".local", "share", "beets", "library.db") # Beet
 os.makedirs(TEMP_AUDIO_DIR, exist_ok=True)
 os.makedirs(VIDEO_OUTDIR, exist_ok=True)
 
+# URL of the latest version of this file on GitHub (raw link!)
+GITHUB_RAW_URL = "https://raw.githubusercontent.com/Rbel12b/yt-dlp-scripts/refs/heads/master/yt-dlp-gui.pyw"
+
+def download_new_version(target_path):
+    tmp_path = target_path + ".new"
+    urllib.request.urlretrieve(GITHUB_RAW_URL, tmp_path)
+    return tmp_path
+
+def update_and_restart():
+    current_file = os.path.abspath(sys.argv[0])
+    new_file = download_new_version(current_file)
+
+    if os.name == "nt":
+        # On Windows, spawn a helper .bat file to replace the file after exit
+        bat_file = "{CONFIG_DIR}\\update_and_restart.bat".format(CONFIG_DIR=CONFIG_DIR)
+        with open(bat_file, "w") as f:
+            f.write(f"""@echo off
+timeout /t 2 /nobreak >nul
+move /y "{new_file}" "{current_file}"
+start "" "{sys.executable}" "{current_file}"
+del "%~f0"
+""")
+        subprocess.Popen([bat_file])
+        sys.exit(0)
+
+    else:
+        # On Linux/Unix, we can just overwrite and restart directly
+        os.replace(new_file, current_file)
+        os.execv(sys.executable, [sys.executable] + [current_file] + sys.argv[1:])
+
+def run_command_term(cmd_args, done_callback=None):
+    """Run command with terminal window, even when python is running without one."""
+
+    proc = subprocess.Popen(
+        cmd_args,
+        creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0,
+    )
+
+    def wait_thread():
+        proc.wait()
+        if done_callback:
+            done_callback()
+
+    threading.Thread(target=wait_thread).start()
+
 def run_command(cmd, cwd=None, show_terminal=False, use_shell=False):
     """Run command with or without showing a terminal window."""
     startupinfo = None
@@ -82,13 +113,18 @@ def setup_venv():
         run_command([python, "-m", "pip", "install", "--upgrade", "pip"], show_terminal=True)
         run_command_term([pip, "install", "beets[fetchart,lyrics,mbsubmit,embedart,chroma]", "mutagen", "yt-dlp"])
 
+def done_update():
+    """Callback after update is done."""
+    messagebox.showinfo("Update", "Update completed. The application will now restart.")
+    update_and_restart()
+
 def do_update():
     """Update yt-dlp and beets in the virtual environment."""
     setup_venv()
     exe_dir = "Scripts" if os.name == "nt" else "bin"
     pip = os.path.join(VENVDIR, exe_dir, "pip.exe" if os.name == "nt" else "pip")
     run_command_term([pip, "install", "--upgrade", "yt-dlp", "beets"], 
-                     done_callback=lambda: messagebox.showinfo("Update", "yt-dlp and beets have been updated."))
+                     done_callback=done_update)
 
 def ensure_config():
     """Ensure beets config file exists."""
